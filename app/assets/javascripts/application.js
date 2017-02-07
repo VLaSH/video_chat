@@ -38,9 +38,20 @@ if($.cookie('current_user') != undefined) {
       participant: $.cookie('current_user')
     },
     {
+      connected: function(data) {
+        console.log('connected');
+        signalingChannel.send({joined: true, session: session_id})
+      },
       received: function(data) {
+        console.log('received');
         console.log(data);
         console.log(pc);
+
+        if(data.joined) {
+          start(true);
+          return;
+        }
+
         if(!pc) {
           start(false);
         }
@@ -103,9 +114,9 @@ function start(isCaller) {
 setTimeout(function() {
   remoteVideo = document.querySelector('video.remote-video');
   localVideo = document.querySelector('video.local-video');
-  $('button.start-broadcast').on('click', function() {
-    console.log('clicked');
-    start(true);
-  });
+  // $('button.start-broadcast').on('click', function() {
+  //   console.log('clicked');
+  //   start(true);
+  // });
 
 }, 1)

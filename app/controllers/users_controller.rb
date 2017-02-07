@@ -6,7 +6,7 @@ class UsersController < ApplicationController
   def create
     if @user = User.create(user_params)
       session[:user_id] = @user.id
-      redirect_to root_path
+      redirect_to destination
     else
       render :new
     end
@@ -15,5 +15,9 @@ class UsersController < ApplicationController
   private
   def user_params
     params.require(:user).permit(:uid)
+  end
+
+  def destination
+    session[:destination] || root_path
   end
 end
