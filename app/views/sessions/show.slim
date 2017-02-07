@@ -1,9 +1,11 @@
 - if current_user.id == @session.initiator_id
   p You are initiator, waiting for connections
   = button_to 'Ping', pings_path(session_uid: params[:session_uid])
-  video.local-video
+  button.start-broadcast Start
 - else
   p
     ' You have connected to
     = @session.initiator.uid
   = button_to 'Ping', pings_path(session_uid: params[:session_uid])
+video.local-video
+video.remote-video

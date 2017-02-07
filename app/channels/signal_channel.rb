@@ -4,6 +4,7 @@ class SignalChannel < ApplicationCable::Channel
   end
 
   def receive(data)
-    ActionCable.server.broadcast("participant_#{params[:participant]}", data)
+    @session = Session.find_by(uid: data['session'])
+    ActionCable.server.broadcast("participant_#{@session.broadcast_to(params['participant'].to_i)}", data)
   end
 end

@@ -8,6 +8,6 @@
 (function() {
   this.App || (this.App = {});
 
-  App.cable = ActionCable.createConsumer('ws://localhost:3000/websocket');
+  App.cable = ActionCable.createConsumer('wss://2d7f083b.ngrok.io/websocket');
 
 }).call(this);

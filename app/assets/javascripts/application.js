@@ -16,15 +16,21 @@
 //= require turbolinks
 //= require_tree .
 
-// navigator.getUserMedia({ audio: true, video: { width: 640, height: 320, frameRate: { ideal: 30, max: 30 } } }, function(stream) {
-//   $('.local-video').attr('src', URL.createObjectURL(stream));
-// }, function(err) {
-//   console.log(err);
+// navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(function(stream) {
+//   console.log(stream.getVideoTracks()[0].getConstraints());
+//   video = document.querySelector('video');
+//   video.srcObject = stream;
+//   video.onloadedmetadata = function(e) {
+//     video.play();
+//   };
 // })
-
+var session_id = window.location.pathname.split('/')[2];
+console.log(session_id);
 var signalingChannel;
 var pc;
 var config = { "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] };
+var remoteVideo;
+var localVideo;
 if($.cookie('current_user') != undefined) {
   signalingChannel = App.cable.subscriptions.create(
     {
@@ -33,19 +39,73 @@ if($.cookie('current_user') != undefined) {
     },
     {
       received: function(data) {
-        if(data.new_participant) {
-          $.cookie('participant', true)
-        }
-        if($.cookie('initiator')) {
-          start(true);
-        } else {
+        console.log(data);
+        console.log(pc);
+        if(!pc) {
           start(false);
         }
+
+        if (data.sdp) {
+          console.log('sdp', data);
+          pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
+        } else {
+          console.log('candidate', data);
+          pc.addIceCandidate(new RTCIceCandidate(data.candidate))
+        }
+
       }
     }
   )
 }
 
 function start(isCaller) {
+  console.log('started');
+  pc = new webkitRTCPeerConnection(config);
 
+  pc.onicecandidate = function(event) {
+    console.log('ice candidate');
+    signalingChannel.send({ candidate: event.candidate, participant: $.cookie('current_user'), session: session_id });
+  }
+
+  pc.onaddstream = function(event) {
+    console.log('stream added');
+    remoteVideo.srcObject = event.stream;
+    remoteVideo.onloadedmetadata = function(e) {
+      remoteVideo.play();
+    };
+  }
+
+  navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(function(stream) {
+    console.log(stream);
+    localVideo.srcObject = stream;
+    pc.addStream(stream);
+    localVideo.onloadedmetadata = function(e) {
+      localVideo.play();
+    };
+
+    if(isCaller) {
+      console.log('caller', pc);
+      pc.createOffer().then(description);
+    } else {
+      console.log('callee');
+      pc.createAnswer().then(description);
+    }
+
+    function description(desc) {
+      console.log('desc----', desc);
+      pc.setLocalDescription(desc);
+      console.log('sending', signalingChannel);
+      signalingChannel.send({sdp: desc, participant: $.cookie('current_user'), session: session_id})
+    }
+  })
 }
+
+setTimeout(function() {
+  remoteVideo = document.querySelector('video.remote-video');
+  localVideo = document.querySelector('video.local-video');
+  $('button.start-broadcast').on('click', function() {
+    console.log('clicked');
+    start(true);
+  });
+
+}, 1)
