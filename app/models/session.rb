@@ -4,6 +4,10 @@ class Session < ApplicationRecord
 
   before_create :generate_uid
 
+  def broadcast_to(id)
+    initiator_id == id ? participant_id : initiator_id
+  end
+
   private
   def generate_uid
     self.uid = SecureRandom.hex(8)

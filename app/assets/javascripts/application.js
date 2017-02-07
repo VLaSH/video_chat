@@ -16,13 +16,36 @@
 //= require turbolinks
 //= require_tree .
 
+// navigator.getUserMedia({ audio: true, video: { width: 640, height: 320, frameRate: { ideal: 30, max: 30 } } }, function(stream) {
+//   $('.local-video').attr('src', URL.createObjectURL(stream));
+// }, function(err) {
+//   console.log(err);
+// })
+
+var signalingChannel;
+var pc;
+var config = { "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] };
 if($.cookie('current_user') != undefined) {
-  console.log('alalla');
-  App.cable.subscriptions.create({
-    channel: "SignalChannel",
-    participant: $.cookie('current_user'),
-    received: function() {
-      alert('got')
+  signalingChannel = App.cable.subscriptions.create(
+    {
+      channel: "SignalChannel",
+      participant: $.cookie('current_user')
+    },
+    {
+      received: function(data) {
+        if(data.new_participant) {
+          $.cookie('participant', true)
+        }
+        if($.cookie('initiator')) {
+          start(true);
+        } else {
+          start(false);
+        }
+      }
     }
-  }
-)
+  )
+}
+
+function start(isCaller) {
+
+}

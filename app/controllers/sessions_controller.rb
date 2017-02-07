@@ -1,7 +1,7 @@
 class SessionsController < ApplicationController
   def create
     if @session = Session.create(initiator_id: current_user.id)
-      session[:initiator_id] = current_user.id
+      cookies[:initiator] = current_user.id
       cookies[:current_user] = current_user.id
       redirect_to session_path(session_uid: @session.uid)
     end
