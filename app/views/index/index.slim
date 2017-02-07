@@ -1,0 +1,4 @@
+- if current_user.present?
+  = render 'authenticated'
+- else
+  = render 'not_authenticated'
