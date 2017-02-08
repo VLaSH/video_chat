@@ -25,7 +25,6 @@
 //   };
 // })
 var session_id = window.location.pathname.split('/')[2];
-console.log(session_id);
 var signalingChannel;
 var pc;
 var config = { "iceServers": [{ "url": "stun:stun.l.google.com:19302" }] };
@@ -39,28 +38,28 @@ if($.cookie('current_user') != undefined) {
     },
     {
       connected: function(data) {
-        console.log('connected');
+        console.log('[LOG][#1]---connected');
         signalingChannel.send({joined: true, session: session_id})
       },
       received: function(data) {
-        console.log('received');
-        console.log(data);
-        console.log(pc);
+        console.log('---received', data);
 
         if(data.joined) {
+          console.log('[LOG][#2]---joined');
           start(true);
           return;
         }
 
         if(!pc) {
+          console.log('[LOG][#8]---got message from caller');
           start(false);
         }
 
         if (data.sdp) {
-          console.log('sdp', data);
+          console.log('[LOG][#9]---got sdp');
           pc.setRemoteDescription(new RTCSessionDescription(data.sdp))
         } else {
-          console.log('candidate', data);
+          console.log('[LOG][#11]---add ice candidate');
           pc.addIceCandidate(new RTCIceCandidate(data.candidate))
         }
 
@@ -70,42 +69,53 @@ if($.cookie('current_user') != undefined) {
 }
 
 function start(isCaller) {
-  console.log('started');
+  console.log('[LOG][#3]---started isCaller=', isCaller);
   pc = new webkitRTCPeerConnection(config);
 
   pc.onicecandidate = function(event) {
-    console.log('ice candidate');
+    console.log('[LOG][#10]---ice Candidate event');
     signalingChannel.send({ candidate: event.candidate, participant: $.cookie('current_user'), session: session_id });
   }
 
   pc.onaddstream = function(event) {
-    console.log('stream added');
+    console.log('[LOG][#12]---remote stream added');
     remoteVideo.srcObject = event.stream;
     remoteVideo.onloadedmetadata = function(e) {
+      console.log('[LOG][#13]---remote video started');
       remoteVideo.play();
     };
   }
+  var audioConstraints = {
+    mandatory: {
+      googEchoCancellation: true,
+      googAutoGainControl: false,
+      googNoiseSuppression: false,
+      googHighpassFilter: false
+    }
+  }
 
-  navigator.mediaDevices.getUserMedia({ audio: true, video: true }).then(function(stream) {
-    console.log(stream);
+  navigator.mediaDevices.getUserMedia({ audio: audioConstraints, video: true }).then(function(stream) {
+
+    console.log('[LOG][#4]---got stream');
+    var localStream = stream;
     localVideo.srcObject = stream;
     pc.addStream(stream);
     localVideo.onloadedmetadata = function(e) {
+      console.log('[LOG][#5]---local video is playing');
       localVideo.play();
     };
 
     if(isCaller) {
-      console.log('caller', pc);
+      console.log('[LOG][#6]---offer creation');
       pc.createOffer().then(description);
     } else {
-      console.log('callee');
+      console.log('[LOG][#1]---answer creation');
       pc.createAnswer().then(description);
     }
 
     function description(desc) {
-      console.log('desc----', desc);
+      console.log('[LOG][#7]---got description, setting local');
       pc.setLocalDescription(desc);
-      console.log('sending', signalingChannel);
       signalingChannel.send({sdp: desc, participant: $.cookie('current_user'), session: session_id})
     }
   })
@@ -114,6 +124,7 @@ function start(isCaller) {
 setTimeout(function() {
   remoteVideo = document.querySelector('video.remote-video');
   localVideo = document.querySelector('video.local-video');
+  localVideo.muted = true;
   // $('button.start-broadcast').on('click', function() {
   //   console.log('clicked');
   //   start(true);

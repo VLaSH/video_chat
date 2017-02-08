@@ -13,6 +13,8 @@
  *= require_tree .
  *= require_self
  */
-.local-video {
+.local-video, .remote-video {
+  margin-left: 10px;
   background-color: black;
+  transform: rotateY(180deg);
 }
