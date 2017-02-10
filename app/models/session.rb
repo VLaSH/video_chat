@@ -1,11 +1,14 @@
 class Session < ApplicationRecord
   belongs_to :initiator, class_name: 'User'
-  belongs_to :participant, class_name: 'User', optional: true
+  has_many :session_users
+  has_many :users, through: :session_users
 
   before_create :generate_uid
 
   def broadcast_to(id)
-    initiator_id == id ? participant_id : initiator_id
+    ids = users.pluck(:id).sort
+    ids.delete(id)
+    ids || []
   end
 
   private

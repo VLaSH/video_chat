@@ -8,7 +8,7 @@ module ApplicationCable
 
     private
     def find_verified_user
-      if current_user = User.first
+      if current_user = User.find(cookies[:current_user])
         current_user
       else
         reject_unauthorized_connection

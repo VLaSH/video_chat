@@ -11,10 +11,12 @@ class SessionsController < ApplicationController
 
   def show
     @session = Session.find_by(uid: params[:session_uid])
-    if @session.initiator_id != current_user.id && @session.participant_id.nil?
-      @session.update(participant: current_user)
-      cookies[:current_user] = current_user.id
-    end
+    @session.users << current_user
+    cookies[:current_user] = current_user.id
+    cookies[:users] = @session.broadcast_to(current_user.id)
+  rescue ActiveRecord::RecordInvalid => e
+    cookies[:current_user] = current_user.id
+    cookies[:users] = @session.broadcast_to(current_user.id)
   end
 
   private
